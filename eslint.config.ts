@@ -21,4 +21,10 @@ export default defineConfigWithVueTs(
   vueTsConfigs.recommended,
   ...pluginOxlint.configs['flat/recommended'],
   skipFormatting,
+  {
+    name: 'custom-rules',
+    rules: {
+      'no-unused-vars': 'warn', // 或 'off' 关闭它
+    },
+  },
 )

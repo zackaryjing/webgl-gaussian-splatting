@@ -28,11 +28,12 @@ export async function loadPlyBinary(): Promise<PlyBufferData> {
   for (let i = 0; i < vertexCount; i++) {
     let ptr = offset + i * stride
 
+    // model xyz equals webgl xzy
     positions[i * 3 + 0] = dataView.getFloat32(ptr, true)
     ptr += 4
-    positions[i * 3 + 1] = dataView.getFloat32(ptr, true)
-    ptr += 4
     positions[i * 3 + 2] = dataView.getFloat32(ptr, true)
+    ptr += 4
+    positions[i * 3 + 1] = dataView.getFloat32(ptr, true)
     ptr += 4
 
     colors[i * 3 + 0] = dataView.getUint8(ptr++)

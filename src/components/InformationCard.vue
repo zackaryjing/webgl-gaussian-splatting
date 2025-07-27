@@ -10,6 +10,8 @@
         ({{ pt.r }}, {{ pt.g }}, {{ pt.b }})
       </li>
     </ul>
+    {{ message }}
+
   </div>
 </template>
 
@@ -22,4 +24,20 @@ const plyInfo = ref<PlyData | null>(null)
 onMounted(async () => {
   plyInfo.value = await loadPlyFromAssets()
 })
+
+let message = ""
+
+const canvas = document.createElement('canvas');
+const gl2 = canvas.getContext('webgl2');
+if (gl2) {
+  message = ('WebGL 2 is supported and in use');
+} else {
+  const gl1 = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+  if (gl1) {
+    message = ('WebGL 1 is supported and in use');
+  } else {
+    message = ('WebGL is not supported');
+  }
+}
+
 </script>

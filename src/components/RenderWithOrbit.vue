@@ -4,12 +4,17 @@
 
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import { renderPointCloud } from '@/utils/pointRender.ts'
-import { loadPlyBinary, type PlyBufferData } from '@/utils/parsePly.ts'
+import { createPointRenderer } from '@/utils/pointRender.ts'
+import { loadPlyBinary, type PlyBufferData } from '@/utils/parsePly'
 
 const canvas = ref<HTMLCanvasElement | null>(null)
+
 onMounted(async () => {
   const { positions, colors }: PlyBufferData = await loadPlyBinary()
-  renderPointCloud(canvas.value!, positions, colors)
+  if (canvas.value) {
+    createPointRenderer(canvas.value, positions, colors)
+  }
 })
 </script>
+
+<style></style>

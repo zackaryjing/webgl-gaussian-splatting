@@ -1,12 +1,10 @@
 <!-- src/components/Viewer.vue -->
 <script setup lang="ts">
-import RenderStatic from '@/components/RenderStatic.vue'
-import RenderWithOrbit from '@/components/RenderWithOrbit.vue'
+import InformationCard from '@/components/InformationCard.vue'
 </script>
 <template>
   <div class="main">
-<!--    <RenderStatic></RenderStatic>-->
-    <RenderWithOrbit></RenderWithOrbit>
+    <InformationCard></InformationCard>
   </div>
 </template>
 
