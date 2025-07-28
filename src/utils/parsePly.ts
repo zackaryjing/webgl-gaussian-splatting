@@ -48,6 +48,72 @@ export async function loadPlyBinary(): Promise<PlyBufferData> {
   }
 }
 
+export interface GaussianPoint {
+  position: [number, number, number]
+  color: [number, number, number]
+  scale: [number, number, number]
+  rotation: [number, number, number, number] // quaternion
+}
+
+export async function loadPlyBinaryFullSpec(): Promise<GaussianPoint[]> {
+  const response = await fetch('/models/Tree.ply')
+  const arrayBuffer = await response.arrayBuffer()
+  const dataView = new DataView(arrayBuffer)
+
+  let offset = 0
+  let header = ''
+  while (true) {
+    const byte = dataView.getUint8(offset++)
+    header += String.fromCharCode(byte)
+    if (header.endsWith('end_header\n')) break
+  }
+
+  const vertexCount = 279910
+  const stride = 4 * 3 + 1 * 3 + 4 * 3 + 4 * 1 // float*3 + uchar*3 + float*3 + float*4 = 52 bytes
+
+  const points: GaussianPoint[] = []
+
+  for (let i = 0; i < vertexCount; i++) {
+    let ptr = offset + i * stride
+
+    const x = dataView.getFloat32(ptr, true)
+    ptr += 4
+    const y = dataView.getFloat32(ptr, true)
+    ptr += 4
+    const z = dataView.getFloat32(ptr, true)
+    ptr += 4
+
+    const r = dataView.getUint8(ptr++),
+      g = dataView.getUint8(ptr++),
+      b = dataView.getUint8(ptr++)
+
+    const s0 = dataView.getFloat32(ptr, true)
+    ptr += 4
+    const s1 = dataView.getFloat32(ptr, true)
+    ptr += 4
+    const s2 = dataView.getFloat32(ptr, true)
+    ptr += 4
+
+    const qx = dataView.getFloat32(ptr, true)
+    ptr += 4
+    const qy = dataView.getFloat32(ptr, true)
+    ptr += 4
+    const qz = dataView.getFloat32(ptr, true)
+    ptr += 4
+    const qw = dataView.getFloat32(ptr, true)
+    ptr += 4
+
+    points.push({
+      position: [x, z, y], // 注意：xzy 顺序
+      color: [r, g, b],
+      scale: [s0, s1, s2],
+      rotation: [qx, qy, qz, qw],
+    })
+  }
+
+  return points
+}
+
 // src/utils/parsePly.ts
 
 export interface PlyPoint {
