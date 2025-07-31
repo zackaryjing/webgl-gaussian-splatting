@@ -5,12 +5,12 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { createPointRenderer } from '@/utils/pointRender.ts'
-import { loadPlyBinary, type PlyBufferData } from '@/utils/parsePly'
+import { loadPlyBinary, loadPlyBinary2, type PlyBufferData } from '@/utils/parsePly'
 
 const canvas = ref<HTMLCanvasElement | null>(null)
 
 onMounted(async () => {
-  const { positions, colors }: PlyBufferData = await loadPlyBinary()
+  const { vertexCount, positions, colors }: PlyBufferData = await loadPlyBinary2()
   if (canvas.value) {
     createPointRenderer(canvas.value, positions, colors)
   }

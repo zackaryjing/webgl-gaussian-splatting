@@ -14,6 +14,16 @@ const router = createRouter({
       name: 'info',
       component: () => import('@/views/InformationView.vue'),
     },
+    {
+      path: '/static',
+      name: 'static',
+      component: () => import('@/views/StaticPresentation.vue'),
+    },
+    {
+      path: '/orbit',
+      name: 'orbit',
+      component: () => import('@/views/OrbitPresentation.vue'),
+    },
   ],
 })
 

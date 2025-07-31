@@ -2,11 +2,15 @@
 <script setup lang="ts">
 import RenderStatic from '@/components/RenderStatic.vue'
 import RenderWithOrbit from '@/components/RenderWithOrbit.vue'
+import RenderGaussian from '@/components/RenderGaussian.vue'
+import RenderSingleGaussian from '@/components/RenderSingleGaussian.vue'
 </script>
 <template>
   <div class="main">
-<!--    <RenderStatic></RenderStatic>-->
-    <RenderWithOrbit></RenderWithOrbit>
+    <!--    <RenderStatic></RenderStatic>-->
+<!--        <RenderWithOrbit></RenderWithOrbit>-->
+    <RenderGaussian></RenderGaussian>
+<!--    <RenderSingleGaussian></RenderSingleGaussian>-->
   </div>
 </template>
 
