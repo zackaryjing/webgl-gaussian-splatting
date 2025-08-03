@@ -1,5 +1,7 @@
 import { OrbitCamera } from '@/utils/orbitCamera.ts'
 import { mat4, vec3, quat } from 'gl-matrix'
+import vsSource from './shader/shader.vs?raw'
+import fsSource from './shader/shader.fs?raw'
 
 export function createGaussianRenderer(canvas: HTMLCanvasElement) {
   const gl = canvas.getContext('webgl2')!
@@ -184,7 +186,6 @@ export function createGaussianRenderer(canvas: HTMLCanvasElement) {
         // outColor = vec4(v_color,0.5);
         outColor = vec4(finalColor, alpha * v_opacity);
       }
-
     }
     `
 

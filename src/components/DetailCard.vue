@@ -10,9 +10,9 @@
         <span v-for="(sh, idk) in pt.sh.slice(0, 5)" :key="idk">
           sh{{ idk }}: {{ sh.toFixed(2) }}
         </span>
-        opacity: ({{ pt.opacity.toFixed(2) }}) scale: ({{
+        opacity: {{ pt.opacity.toFixed(2) }} scale: ({{
           pt.scale.map((a: number) => a.toFixed(2))
-        }})
+        }}) quat: {{ pt.quat.map((a: number) => a.toFixed(2)) }}
       </li>
     </ul>
     {{ message }}
