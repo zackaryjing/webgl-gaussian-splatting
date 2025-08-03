@@ -216,7 +216,10 @@ export interface PlyData {
   samplePoints: PlyPoint[]
 }
 
-export async function loadPlyFromAssets(): Promise<PlyData> {
+
+
+
+export async function loadTreePlyFromAssets(): Promise<PlyData> {
   const response = await fetch('/models/Tree.ply')
   const arrayBuffer = await response.arrayBuffer()
   const dataView = new DataView(arrayBuffer)
@@ -357,5 +360,97 @@ export async function loadPlyBinaryFullSpec2(): Promise<Gaussian[]> {
     console.log('First Gaussian quaternion:', first.quat)
   }
 
+  return gaussians
+}
+
+export async function loadCactusPlyFromAssets(): Promise<Gaussian[]> {
+  const response = await fetch('/models/cactus_splat3_30kSteps_142k_splats.ply')
+  const arrayBuffer = await response.arrayBuffer()
+  const dataView = new DataView(arrayBuffer)
+
+  // --- Parse header ---
+  let offset = 0
+  let header = ''
+  while (true) {
+    const byte = dataView.getUint8(offset++)
+    header += String.fromCharCode(byte)
+    if (header.endsWith('end_header\n')) break
+  }
+
+  const lines = header.split('\n')
+  let vertexCount = 0
+  const properties: { name: string; type: string }[] = []
+
+  for (const line of lines) {
+    const parts = line.trim().split(/\s+/)
+    if (parts[0] === 'element' && parts[1] === 'vertex') {
+      vertexCount = parseInt(parts[2], 10)
+    } else if (parts[0] === 'property') {
+      properties.push({ type: parts[1], name: parts[2] })
+      // console.log(parts[1],parts[2],parts[0])
+    }
+  }
+
+  const floatsPerVertex = properties.filter((p) => p.type === 'float').length
+  const stride = floatsPerVertex * 4 // each float is 4 bytes
+
+  const gaussians: Gaussian[] = []
+
+  for (let i = 0; i < 10; i++) {
+    const ptrBase = offset + i * stride
+    let ptr = ptrBase
+
+    const readFloat = () => {
+      const val = dataView.getFloat32(ptr, true)
+      ptr += 4
+      return val
+    }
+
+    const values = properties.map((p) => readFloat())
+
+    const fieldMap = Object.fromEntries(properties.map((p, i) => [p.name, values[i]]))
+
+    const position: [number, number, number] = [
+      fieldMap['x'],
+      fieldMap['z'], // 注意 xzy 顺序
+      fieldMap['y'],
+    ]
+
+    const sh: number[] = []
+    for (let i = 0; i < 3; i++) {
+      sh.push(fieldMap[`f_dc_${i}`])
+    }
+    for (let i = 0; i < 27; i++) {
+      sh.push(fieldMap[`f_rest_${i}`])
+    }
+
+    const opacity = fieldMap['opacity']
+    const scale: [number, number, number] = [
+      fieldMap['scale_0'],
+      fieldMap['scale_1'],
+      fieldMap['scale_2'],
+    ]
+    const quat: [number, number, number, number] = [
+      fieldMap['rot_0'],
+      fieldMap['rot_1'],
+      fieldMap['rot_2'],
+      fieldMap['rot_3'],
+    ]
+
+    gaussians.push({ position, sh, opacity, scale, quat })
+  }
+
+  console.log(`Loaded ${gaussians.length} gaussians`)
+
+  // 打印第一个点的部分数据确认
+  if (gaussians.length > 0) {
+    const first = gaussians[0]
+    console.log('First Gaussian position:', first.position)
+    console.log('First Gaussian SH coefficients length:', first.sh.length)
+    console.log('First Gaussian SH coefficients (first 9 floats):', first.sh.slice(0, 9))
+    console.log('First Gaussian opacity:', first.opacity)
+    console.log('First Gaussian scale:', first.scale)
+    console.log('First Gaussian quaternion:', first.quat)
+  }
   return gaussians
 }

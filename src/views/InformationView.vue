@@ -1,10 +1,12 @@
 <!-- src/components/Viewer.vue -->
 <script setup lang="ts">
 import InformationCard from '@/components/InformationCard.vue'
+import DetailCard from '@/components/DetailCard.vue'
 </script>
 <template>
   <div class="main">
-    <InformationCard></InformationCard>
+<!--    <InformationCard></InformationCard>-->
+    <DetailCard></DetailCard>
   </div>
 </template>
 

@@ -17,12 +17,12 @@
 
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import { loadPlyFromAssets, type PlyData } from '@/utils/parsePly'
+import { loadTreePlyFromAssets, type PlyData } from '@/utils/parsePly'
 
 const plyInfo = ref<PlyData | null>(null)
 
 onMounted(async () => {
-  plyInfo.value = await loadPlyFromAssets()
+  plyInfo.value = await loadTreePlyFromAssets()
 })
 
 let message = ""
