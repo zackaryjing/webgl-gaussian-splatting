@@ -9,8 +9,8 @@ import RenderSingleGaussian from '@/components/RenderSingleGaussian.vue'
   <div class="main">
     <!--    <RenderStatic></RenderStatic>-->
 <!--        <RenderWithOrbit></RenderWithOrbit>-->
-    <RenderGaussian></RenderGaussian>
-<!--    <RenderSingleGaussian></RenderSingleGaussian>-->
+<!--    <RenderGaussian></RenderGaussian>-->
+    <RenderSingleGaussian></RenderSingleGaussian>
   </div>
 </template>
 
