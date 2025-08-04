@@ -24,6 +24,11 @@ const router = createRouter({
       name: 'orbit',
       component: () => import('@/views/OrbitPresentation.vue'),
     },
+    {
+      path: '/full',
+      name: 'full',
+      component: () => import('@/views/FullSpecGaussian.vue'),
+    },
   ],
 })
 

@@ -7,11 +7,15 @@
       <li v-for="(pt, idx) in gaussianData" :key="idx">
         position: {{ idx + 1 }}: ({{ pt.position[0].toFixed(2) }}, {{ pt.position[1].toFixed(2) }},
         {{ pt.position[2].toFixed(2) }})
-        <span v-for="(sh, idk) in pt.sh.slice(0, 5)" :key="idk">
+        color:(
+        <span v-for="(sh, idk) in pt.sh.slice(0, 3)" :key="idk">
+          {{ sh.toFixed(2) }},
+        </span>)
+        <span v-for="(sh, idk) in pt.sh.slice(3, 5)" :key="idk">
           sh{{ idk }}: {{ sh.toFixed(2) }}
         </span>
-        opacity: {{ pt.opacity.toFixed(2) }} scale: ({{
-          pt.scale.map((a: number) => a.toFixed(2))
+        opacity: {{ pt.opacity.toFixed(10) }} scale: ({{
+          pt.scale.map((a: number) => a.toFixed(10))
         }}) quat: {{ pt.quat.map((a: number) => a.toFixed(2)) }}
       </li>
     </ul>

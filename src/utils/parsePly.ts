@@ -55,7 +55,7 @@ export async function loadPlyBinary(): Promise<PlyBufferData> {
   return {
     vertexCount,
     positions,
-    colors,
+    colors
   }
 }
 
@@ -130,7 +130,7 @@ export async function loadPlyBinary2(): Promise<PlyBufferData> {
   return {
     vertexCount,
     positions,
-    colors,
+    colors
   }
 }
 
@@ -193,7 +193,7 @@ export async function loadPlyBinaryFullSpec1(): Promise<GaussianSimply[]> {
       position: [x, z, y], // 注意：xzy 顺序
       color: [r, g, b],
       scale: [s0, s1, s2],
-      quat: [qx, qy, qz, qw],
+      quat: [qx, qy, qz, qw]
     })
   }
 
@@ -215,8 +215,6 @@ export interface PlyData {
   vertexCount: number
   samplePoints: PlyPoint[]
 }
-
-
 
 
 export async function loadTreePlyFromAssets(): Promise<PlyData> {
@@ -259,7 +257,7 @@ export async function loadTreePlyFromAssets(): Promise<PlyData> {
 
   return {
     vertexCount,
-    samplePoints,
+    samplePoints
   }
 }
 
@@ -302,8 +300,10 @@ export async function loadPlyBinaryFullSpec2(): Promise<Gaussian[]> {
   const stride = floatsPerVertex * 4 // each float is 4 bytes
 
   const gaussians: Gaussian[] = []
+  const SH_C0 = 0.28209479177387814
+  const sigmoid = (v: number) => 1 / (1 + Math.exp(-v))
 
-  for (let i = 0; i < vertexCount; i++) {
+  for (let i = 0; i < vertexCount; i++) { // 加载所有高斯，而非仅前10个
     const ptrBase = offset + i * stride
     let ptr = ptrBase
 
@@ -314,52 +314,45 @@ export async function loadPlyBinaryFullSpec2(): Promise<Gaussian[]> {
     }
 
     const values = properties.map((p) => readFloat())
-
     const fieldMap = Object.fromEntries(properties.map((p, i) => [p.name, values[i]]))
 
+    // 位置（注意坐标系可能需要调整）
     const position: [number, number, number] = [
       fieldMap['x'],
-      fieldMap['z'], // 注意 xzy 顺序
-      fieldMap['y'],
+      -fieldMap['y'],
+      fieldMap['z']
     ]
 
+    // SH系数（基础颜色 + 高阶）
     const sh: number[] = []
     for (let i = 0; i < 3; i++) {
-      sh.push(fieldMap[`f_dc_${i}`])
+      sh.push(0.5 + fieldMap[`f_dc_${i}`] * SH_C0) // 归一化基础色
     }
     for (let i = 0; i < 27; i++) {
-      sh.push(fieldMap[`f_rest_${i}`])
+      sh.push(fieldMap[`f_rest_${i}`]) // 高阶系数
     }
 
-    const opacity = fieldMap['opacity']
+    // 不透明度（Sigmoid激活）
+    const opacity = sigmoid(fieldMap['opacity'])
+
+    // 尺度（指数转换）
     const scale: [number, number, number] = [
-      fieldMap['scale_0'],
-      fieldMap['scale_1'],
-      fieldMap['scale_2'],
+      Math.exp(fieldMap['scale_0']),
+      Math.exp(fieldMap['scale_1']),
+      Math.exp(fieldMap['scale_2'])
     ]
+
+    // 旋转四元数（归一化）
     const quat: [number, number, number, number] = [
       fieldMap['rot_0'],
       fieldMap['rot_1'],
       fieldMap['rot_2'],
-      fieldMap['rot_3'],
+      fieldMap['rot_3']
     ]
-
     gaussians.push({ position, sh, opacity, scale, quat })
   }
 
   console.log(`Loaded ${gaussians.length} gaussians`)
-
-  // 打印第一个点的部分数据确认
-  if (gaussians.length > 0) {
-    const first = gaussians[0]
-    console.log('First Gaussian position:', first.position)
-    console.log('First Gaussian SH coefficients length:', first.sh.length)
-    console.log('First Gaussian SH coefficients (first 9 floats):', first.sh.slice(0, 9))
-    console.log('First Gaussian opacity:', first.opacity)
-    console.log('First Gaussian scale:', first.scale)
-    console.log('First Gaussian quaternion:', first.quat)
-  }
-
   return gaussians
 }
 
@@ -387,7 +380,6 @@ export async function loadCactusPlyFromAssets(): Promise<Gaussian[]> {
       vertexCount = parseInt(parts[2], 10)
     } else if (parts[0] === 'property') {
       properties.push({ type: parts[1], name: parts[2] })
-      // console.log(parts[1],parts[2],parts[0])
     }
   }
 
@@ -395,8 +387,10 @@ export async function loadCactusPlyFromAssets(): Promise<Gaussian[]> {
   const stride = floatsPerVertex * 4 // each float is 4 bytes
 
   const gaussians: Gaussian[] = []
+  const SH_C0 = 0.28209479177387814
+  const sigmoid = (v: number) => 1 / (1 + Math.exp(-v))
 
-  for (let i = 0; i < 10; i++) {
+  for (let i = 0; i < 10; i++) { // 加载所有高斯，而非仅前10个
     const ptrBase = offset + i * stride
     let ptr = ptrBase
 
@@ -407,50 +401,45 @@ export async function loadCactusPlyFromAssets(): Promise<Gaussian[]> {
     }
 
     const values = properties.map((p) => readFloat())
-
     const fieldMap = Object.fromEntries(properties.map((p, i) => [p.name, values[i]]))
 
+    // 位置（注意坐标系可能需要调整）
     const position: [number, number, number] = [
       fieldMap['x'],
-      fieldMap['z'], // 注意 xzy 顺序
       fieldMap['y'],
+      fieldMap['z']
     ]
 
+    // SH系数（基础颜色 + 高阶）
     const sh: number[] = []
     for (let i = 0; i < 3; i++) {
-      sh.push(fieldMap[`f_dc_${i}`])
+      sh.push(0.5 + fieldMap[`f_dc_${i}`] * SH_C0) // 归一化基础色
     }
     for (let i = 0; i < 27; i++) {
-      sh.push(fieldMap[`f_rest_${i}`])
+      sh.push(fieldMap[`f_rest_${i}`]) // 高阶系数
     }
 
-    const opacity = fieldMap['opacity']
+    // 不透明度（Sigmoid激活）
+    const opacity = sigmoid(fieldMap['opacity'])
+
+    // 尺度（指数转换）
     const scale: [number, number, number] = [
-      fieldMap['scale_0'],
-      fieldMap['scale_1'],
-      fieldMap['scale_2'],
+      Math.exp(fieldMap['scale_0']),
+      Math.exp(fieldMap['scale_1']),
+      Math.exp(fieldMap['scale_2'])
     ]
+
+    // 旋转四元数（归一化）
     const quat: [number, number, number, number] = [
       fieldMap['rot_0'],
       fieldMap['rot_1'],
       fieldMap['rot_2'],
-      fieldMap['rot_3'],
+      fieldMap['rot_3']
     ]
 
     gaussians.push({ position, sh, opacity, scale, quat })
   }
 
   console.log(`Loaded ${gaussians.length} gaussians`)
-
-  // 打印第一个点的部分数据确认
-  if (gaussians.length > 0) {
-    const first = gaussians[0]
-    console.log('First Gaussian position:', first.position)
-    console.log('First Gaussian SH coefficients length:', first.sh.length)
-    console.log('First Gaussian SH coefficients (first 9 floats):', first.sh.slice(0, 9))
-    console.log('First Gaussian opacity:', first.opacity)
-    console.log('First Gaussian scale:', first.scale)
-    console.log('First Gaussian quaternion:', first.quat)
-  }
   return gaussians
 }
