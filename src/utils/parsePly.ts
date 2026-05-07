@@ -328,8 +328,12 @@ export async function loadPlyBinaryFullSpec2(): Promise<Gaussian[]> {
     for (let i = 0; i < 3; i++) {
       sh.push(0.5 + fieldMap[`f_dc_${i}`] * SH_C0) // 归一化基础色
     }
-    for (let i = 0; i < 27; i++) {
-      sh.push(fieldMap[`f_rest_${i}`]) // 高阶系数
+    // f_rest按通道优先存储: [R_基0..8, G_基0..8, B_基0..8]
+    // 重排为基优先: 每组3个 = (R_i, G_i, B_i)
+    for (let basis = 0; basis < 9; basis++) {
+      sh.push(fieldMap[`f_rest_${basis}`])       // R for this basis
+      sh.push(fieldMap[`f_rest_${basis + 9}`])   // G for this basis
+      sh.push(fieldMap[`f_rest_${basis + 18}`])  // B for this basis
     }
 
     // 不透明度（Sigmoid激活）
@@ -413,10 +417,13 @@ export async function loadCactusPlyFromAssets(): Promise<Gaussian[]> {
     // SH系数（基础颜色 + 高阶）
     const sh: number[] = []
     for (let i = 0; i < 3; i++) {
-      sh.push(0.5 + fieldMap[`f_dc_${i}`] * SH_C0) // 归一化基础色
+      sh.push(0.5 + fieldMap[`f_dc_${i}`] * SH_C0)
     }
-    for (let i = 0; i < 27; i++) {
-      sh.push(fieldMap[`f_rest_${i}`]) // 高阶系数
+    // f_rest按通道优先存储，重排为基优先
+    for (let basis = 0; basis < 9; basis++) {
+      sh.push(fieldMap[`f_rest_${basis}`])
+      sh.push(fieldMap[`f_rest_${basis + 9}`])
+      sh.push(fieldMap[`f_rest_${basis + 18}`])
     }
 
     // 不透明度（Sigmoid激活）
@@ -429,7 +436,7 @@ export async function loadCactusPlyFromAssets(): Promise<Gaussian[]> {
       Math.exp(fieldMap['scale_2'])
     ]
 
-    // 旋转四元数（归一化）
+    // 旋转四元数
     const quat: [number, number, number, number] = [
       fieldMap['rot_0'],
       fieldMap['rot_1'],

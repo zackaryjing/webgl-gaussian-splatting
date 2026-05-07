@@ -25,8 +25,9 @@ uniform vec2 u_canvasSize;
 out float v_opacity;
 out mat2 v_cov2D;
 out vec3 v_sh[9];
-out vec4 v_viewDir;
+out vec3 v_viewDir;
 out vec3 v_color;
+out float v_halfSize;
 
 mat3 quatToMat3(vec4 q) {
     float x = q.x, y = q.y, z = q.z, w = q.w;
@@ -59,37 +60,45 @@ void main() {
     // 2. 转换到视图空间
     mat3 W = mat3(u_view);
     vec4 posView = u_view * vec4(a_position, 1.0);
-    v_viewDir = -posView;
+    v_viewDir = -posView.xyz;
     mat3 Sigma3D_view = W * Sigma3D * transpose(W);
 
     float near = 0.1; // 应与u_proj的near平面一致
 
-    // 3. 构建透视投影的雅可比矩阵（3x3版本）
-    float z = max(abs(posView.z), near); // 避免除零
-    float focal = u_proj[1][1];         // = 1/tan(fov/2)
+    // 3. 透视投影的雅可比矩阵
+    float z = max(abs(posView.z), near);
+    float focal = u_proj[1][1];
     float aspect = u_canvasSize.x / u_canvasSize.y;
 
+    // x' = focal * x / (aspect * (-z)),  y' = focal * y / (-z)
     mat3 J = mat3(
-        focal/z,     0,     -focal*posView.x/(z*z),  // ∂x'/∂x, ∂x'/∂z
-        0,     -focal/(z*aspect), focal*posView.y/(z*z*aspect), // ∂y'/∂y, ∂y'/∂z
-        0,           0,           0                   // 无z'分量
+        focal / (z * aspect), 0, 0,
+        0, focal / z, 0,
+        focal * posView.x / (z * z * aspect), focal * posView.y / (z * z), 0
     );
 
-    // 4. 计算2D协方差矩阵
-    mat3 T = transpose(mat3(u_view)) * J;
-    mat3 cov2d = transpose(T) * Sigma3D_view * T;
+    // 4. Σ_2D = J * Σ_view * J^T
+    mat3 cov2d = J * Sigma3D_view * transpose(J);
 
-    // 5. 转换到像素空间（基于视口分辨率）
-    float pixelScale = 0.5 * min(u_canvasSize.x, u_canvasSize.y);
-    v_cov2D = mat2(cov2d) * (pixelScale * pixelScale); // 协方差需要平方缩放
+    // 5. 转换到像素空间
+    float sx = 0.5 * u_canvasSize.x;
+    float sy = 0.5 * u_canvasSize.y;
+    v_cov2D = mat2(
+        cov2d[0][0] * sx * sx, cov2d[0][1] * sx * sy,
+        cov2d[1][0] * sy * sx, cov2d[1][1] * sy * sy
+    );
 
-    // 6. 计算点大小（基于特征值）
+    // 6. 计算点大小（3σ）
     float mid = (v_cov2D[0][0] + v_cov2D[1][1]) * 0.5;
     float radius = length(vec2(v_cov2D[0][0] - mid, v_cov2D[0][1]));
     float lambda1 = mid + radius;
-    gl_PointSize = 3.0 * sqrt(lambda1); // 3σ原则
-//    gl_PointSize = 3.0;
+    gl_PointSize = max(1.0, 3.0 * sqrt(lambda1));
 
-    // 7. 投影变换
+    // 7. 传递归一化协方差到fragment shader
+    float halfSize = gl_PointSize * 0.5;
+    v_halfSize = halfSize;
+    v_cov2D = v_cov2D / (halfSize * halfSize);
+
+    // 8. 投影变换
     gl_Position = u_proj * posView;
 }
